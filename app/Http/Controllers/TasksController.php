@@ -8,24 +8,31 @@ use App\Task;
 
 class TasksController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
     public function index()
     {
-        $tasks = Task::all();
-        return view('tasks.index', [
-            'tasks' => $tasks,
-        ]);
+        $data = [];   
+        if (\Auth::check()) { // 認証済みの場合
+            // 認証済みユーザを取得
+            $user = \Auth::user();
+            $tasks = $user->tasks()->orderBy('created_at', 'desc')->paginate(10);
+            
+            $data = [
+                'user' => $user,
+                'tasks' => $tasks,
+            ];
+        
+        return view('tasks.index', ['tasks' => $tasks, ]);    
+        
+      
+        }
+        
+        // Welcomeビューでそれらを表示
+        return view('welcome', $data);
+        
+       
     }
-
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
+    
+    
     public function create()
     {
         $task = new Task;
@@ -36,23 +43,24 @@ class TasksController extends Controller
         ]);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */    
+    
      public function store(Request $request)
     {
        $request->validate([
             'status' => 'required|max:10',
             'content' => 'required|max:255',
+            
         ]);
-        $task = new Task;
-        $task->status = $request->status;
-        $task->content = $request->content;
-        $task->save();
-
+        
+        // 認証済みユーザ（閲覧者）の投稿として作成（リクエストされた値をもとに作成）
+         $request->user()->tasks()->create([
+             
+            'status' => $request->status,
+            'content' => $request->content,
+            
+           
+        ]);
+        
         // トップページへリダイレクトさせる
         return redirect('/');
     }
@@ -73,12 +81,8 @@ class TasksController extends Controller
         ]);
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
+   
+   
     public function edit($id)
     {
         $task = Task::findOrFail($id);
@@ -88,13 +92,7 @@ class TasksController extends Controller
         ]);    
     }
 
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
+
     public function update(Request $request, $id)
     {
         $request->validate([
@@ -117,9 +115,13 @@ class TasksController extends Controller
      */
     public function destroy($id)
     {
-        $task = Task::findOrFail($id);
-        $task->delete();
+        $task = \App\Task::findOrFail($id);
         
+        // 認証済みユーザ（閲覧者）がその投稿の所有者である場合は、投稿を削除
+        if (\Auth::id() === $task->user_id) {
+            $task->delete();
+        }
         return redirect('/');
     }
 }
+    

@@ -8,7 +8,7 @@
         <div class="col-6">
             {!! Form::model($task, ['route' => ['tasks.update', $task->id], 'method' => 'put']) !!}
 
-                 <div class="form-group">
+                <div class="form-group">
                     {!! Form::label('status', 'status:') !!}
                     {!! Form::text('status', null, ['class' => 'form-control']) !!}
                 </div>
