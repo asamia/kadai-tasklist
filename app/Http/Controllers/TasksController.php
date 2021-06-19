@@ -20,23 +20,22 @@ class TasksController extends Controller
                 'user' => $user,
                 'tasks' => $tasks,
             ];
+    
+          
         
         return view('tasks.index', ['tasks' => $tasks, ]);    
-        
-      
-        }
-        
-        // Welcomeビューでそれらを表示
-        return view('welcome', $data);
-        
+    
        
     }
     
+        // Welcomeビューでそれらを表示
+        return view('welcome', $data);
+    }
     
     public function create()
     {
         $task = new Task;
-
+        
         
         return view('tasks.create', [
             'task' => $task,
@@ -76,9 +75,14 @@ class TasksController extends Controller
         //
         $task = Task::findOrFail($id);
         
+        if (\Auth::id() === $task->user_id) {
+            
         return view('tasks.show', [
             'task' => $task,
         ]);
+        }
+        
+        return redirect('/');
     }
 
    
@@ -87,9 +91,14 @@ class TasksController extends Controller
     {
         $task = Task::findOrFail($id);
          
+        if (\Auth::id() === $task->user_id) {
+            
+        
         return view('tasks.edit', [
             'task' => $task,
-        ]);    
+        ]);
+        }
+        return redirect('/');
     }
 
 
@@ -102,9 +111,13 @@ class TasksController extends Controller
         $task = Task::findOrFail($id);
         $task->status = $request->status;
         $task->content = $request->content;
-        $task->save();
         
+        
+        if (\Auth::id() === $task->user_id) {
+           $task->save();
+        }
         return redirect('/');
+
     }
 
     /**
